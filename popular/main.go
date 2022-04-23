@@ -69,33 +69,37 @@ func CountVote(wardData []ElectionData, localHeadData map[string]ElectionData, l
 	var eleCom ElectionWardPrime
 
 	for _, data := range wardData {
-		wardPartyCountMap[fmt.Sprintf("%s_%s", data.Localbodyname, data.Politicalpartyname)] += data.Totalvotesrecieved
+		if data.Politicalpartyname != "स्वतन्त्र" {
+			wardPartyCountMap[fmt.Sprintf("%s__%s__%s", data.Districtname, data.Localbodyname, data.Politicalpartyname)] += data.Totalvotesrecieved
+		}
 	}
 
 	maxNumber := math.MinInt32
 	var pname string
 	for key, value := range wardPartyCountMap {
-		name := strings.Split(key, "_")
-		if localBody == name[0] {
+		name := strings.Split(key, "__")
+		if localBody == fmt.Sprintf("%s__%s", name[0], name[1]) {
 			if value > maxNumber {
 				maxNumber = value
-				pname = name[1]
+				pname = name[2]
 			}
 		}
 	}
 
 	if localHeadData[localBody].Politicalpartyname != pname {
-		eleCom = ElectionWardPrime{
-			Localbodyname:            localBody,
-			District:                 localHeadData[localBody].Districtname,
-			State:                    localHeadData[localBody].Stateid,
-			WonBy:                    localHeadData[localBody].Candidatename,
-			WinnerVote:               localHeadData[localBody].Totalvotesrecieved,
-			WinningParty:             localHeadData[localBody].Politicalpartyname,
-			HighestWardHeadVote:      maxNumber,
-			HighestWardHeadVoteParty: pname,
-			Postname:                 localHeadData[localBody].Postname,
-			VoteDifference:           localHeadData[localBody].Totalvotesrecieved - maxNumber,
+		if maxNumber > localHeadData[localBody].Totalvotesrecieved {
+			eleCom = ElectionWardPrime{
+				Localbodyname:            localHeadData[localBody].Localbodyname,
+				District:                 localHeadData[localBody].Districtname,
+				State:                    localHeadData[localBody].Stateid,
+				WonBy:                    localHeadData[localBody].Candidatename,
+				WinnerVote:               localHeadData[localBody].Totalvotesrecieved,
+				WinningParty:             localHeadData[localBody].Politicalpartyname,
+				HighestWardHeadVote:      maxNumber,
+				HighestWardHeadVoteParty: pname,
+				Postname:                 localHeadData[localBody].Postname,
+				VoteDifference:           localHeadData[localBody].Totalvotesrecieved - maxNumber,
+			}
 		}
 	}
 	return eleCom
@@ -142,13 +146,15 @@ func main() {
 	post := "उपाध्यक्ष"
 
 	for _, data := range electionData {
+
 		if data.Postname == post && data.Estatus == "E" {
-			mainMap[data.Localbodyname] = data
+			mainMap[fmt.Sprintf("%s__%s", data.Districtname, data.Localbodyname)] = data
 		}
 
 		if data.Postname == "वडा अध्यक्ष" {
-			wardVoteMap[data.Localbodyname] = append(wardVoteMap[data.Localbodyname], data)
+			wardVoteMap[fmt.Sprintf("%s__%s", data.Districtname, data.Localbodyname)] = append(wardVoteMap[fmt.Sprintf("%s__%s", data.Districtname, data.Localbodyname)], data)
 		}
+
 	}
 
 	for key, value := range wardVoteMap {
